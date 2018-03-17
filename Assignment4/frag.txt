@@ -1,0 +1,78 @@
+#version 330
+uniform mat4 viewMatrix, projMatrix;
+
+uniform vec4 Ambient;
+uniform vec3 LightColor;
+uniform vec3 LightPosition;
+uniform float Shininess;
+uniform float Strength;
+uniform vec3 EyeDirection;
+
+uniform vec3 mat_emissive;
+uniform vec3 mat_ambient;
+uniform vec3 mat_diffuse;
+uniform vec3 mat_specular;
+
+uniform vec3 Diffuse;
+uniform vec3 Specular;
+
+uniform sampler2D myTextureSampler;
+
+in vec3 Color;
+in vec3 Normal;
+in vec4 Position;
+
+in vec2 UV;
+
+out vec4 outputF;
+
+out vec3 textureColor;
+
+#define NOLIGHT 0
+#define GOURAUD 1
+#define PHONG	2
+
+#define SPINNER		0
+#define REVOLVER	1
+
+uniform int shader;
+
+uniform int objectID;
+
+void main()
+{
+
+    //outputF = vec4(Color, 1.0f);
+	//textureColor = texture( myTextureSampler, UV ).rgb;
+
+	textureColor = texture( myTextureSampler, UV ).rgb;
+
+	if (shader == PHONG)
+	{
+		vec3 L = normalize(LightPosition - vec3(Position));
+		vec3 V = normalize(EyeDirection);
+		vec3 H = (L + V) / length(L + V);
+		vec3 global_ambient = LightColor;
+		vec3 light_ambient = vec3(Ambient);
+		vec3 light_diffuse = Diffuse;
+		vec3 light_specular = Specular;
+
+		vec3 ambient = global_ambient * mat_ambient + light_ambient * mat_ambient;
+		vec3 diffuse = max(dot(L, Normal), 0) * light_diffuse * mat_diffuse;
+		vec3 specular = pow(max(dot(H, Normal), 0), Shininess) * light_specular * mat_specular;
+
+		if (objectID == SPINNER)
+			outputF = vec4(Color * (mat_emissive + ambient + diffuse + specular), 1);
+		else if (objectID == REVOLVER)
+			outputF = vec4(textureColor * (mat_emissive + ambient + diffuse + specular), 1);
+	}
+	else if (shader == NOLIGHT || shader == GOURAUD)
+	{
+		if (objectID == SPINNER)
+			outputF = vec4(Color, 1);
+		else if (objectID == REVOLVER)
+			outputF = vec4(textureColor, 1);
+	}
+
+	
+}
